@@ -131,13 +131,13 @@ void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int m
 		{
 			// Set the key to pressed
 			theWindow->keys[key] = true;
-			printf("pressed: %d\n", key);
+			//printf("pressed: %d\n", key);
 		}
 		else if (action == GLFW_RELEASE)
 		{
 			// Set the key to released
 			theWindow->keys[key] = false;
-			printf("released: %d\n", key);
+			//printf("released: %d\n", key);
 		}
 	}
 }
