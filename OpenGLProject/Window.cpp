@@ -6,6 +6,10 @@ Window::Window()
 	width = 800;
 	height = 600;
 
+	// Initialize xChange and yChange
+	xChange = 0.0f;
+	yChange = 0.0f;
+
 	// Initialize the array of keys (booleans) as false
 	for (size_t i = 0; i < 1024; i++)
 	{
@@ -17,6 +21,15 @@ Window::Window(GLint windowWitdh, GLint windowHeight)
 {
 	width = windowWitdh;
 	height = windowHeight;
+
+	xChange = 0.0f;
+	yChange = 0.0f;
+
+	// Initialize the array of keys (booleans) as false
+	for (size_t i = 0; i < 1024; i++)
+	{
+		keys[i] = false;
+	}
 }
 
 int Window::Initialize()
@@ -118,11 +131,13 @@ void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int m
 		{
 			// Set the key to pressed
 			theWindow->keys[key] = true;
+			printf("pressed: %d\n", key);
 		}
 		else if (action == GLFW_RELEASE)
 		{
 			// Set the key to released
 			theWindow->keys[key] = false;
+			printf("released: %d\n", key);
 		}
 	}
 }
