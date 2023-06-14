@@ -2,85 +2,76 @@
 
 Window::Window()
 {
-	// Initialize the window dimensions
 	width = 800;
 	height = 600;
 
-	// Initialize xChange and yChange
-	xChange = 0.0f;
-	yChange = 0.0f;
-
-	// Initialize the array of keys (booleans) as false
 	for (size_t i = 0; i < 1024; i++)
 	{
-		keys[i] = false;
+		keys[i] = 0;
 	}
+
+	xChange = 0.0f;
+	yChange = 0.0f;
 }
 
-Window::Window(GLint windowWitdh, GLint windowHeight)
+Window::Window(GLint windowWidth, GLint windowHeight)
 {
-	width = windowWitdh;
+	width = windowWidth;
 	height = windowHeight;
 
-	xChange = 0.0f;
-	yChange = 0.0f;
-
-	// Initialize the array of keys (booleans) as false
 	for (size_t i = 0; i < 1024; i++)
 	{
-		keys[i] = false;
+		keys[i] = 0;
 	}
+
+	xChange = 0.0f;
+	yChange = 0.0f;
 }
 
-int Window::Initialize()
+int Window::Initialise()
 {
-	// Initialize GLFW
 	if (!glfwInit())
 	{
-		printf("GLFW Initialization failed!");
+		printf("Error Initialising GLFW");
 		glfwTerminate();
 		return 1;
 	}
 
-	// Setup GLFW window properties
+	// Setup GLFW Windows Properties
 	// OpenGL version
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-
-	// Core profile = No Backwards Compatibility
+	// Core Profile
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// Allow forward compatibility
+	// Allow forward compatiblity
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// Create the window
 	mainWindow = glfwCreateWindow(width, height, "Test Window", NULL, NULL);
-
-	// Check if the window is created
 	if (!mainWindow)
 	{
-		printf("GLFW window creation failed!");
+		printf("Error creating GLFW window!");
 		glfwTerminate();
 		return 1;
 	}
 
-	// Get Buffer size information
+	// Get buffer size information
 	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
 
-	// Set context for GLEW to use
+	// Set the current context
 	glfwMakeContextCurrent(mainWindow);
 
-	// Handle Keyboard + Mouse Input
+	// Handle Key + Mouse Input
 	createCallbacks();
-	glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  // Lock the mouse into place
+	glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	// Allow modern extension features (experimental features)
+	// Allow modern extension access
 	glewExperimental = GL_TRUE;
 
-	// Initialize GLEW
-	if (glewInit() != GLEW_OK)
+	GLenum error = glewInit();
+	if (error != GLEW_OK)
 	{
-		printf("GLEW initialization failed!");
+		printf("Error: %s", glewGetErrorString(error));
 		glfwDestroyWindow(mainWindow);
 		glfwTerminate();
 		return 1;
@@ -88,7 +79,7 @@ int Window::Initialize()
 
 	glEnable(GL_DEPTH_TEST);
 
-	// Setup viewport size
+	// Create Viewport
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
 	glfwSetWindowUserPointer(mainWindow, this);
@@ -116,10 +107,8 @@ GLfloat Window::getYChange()
 
 void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int mode)
 {
-	// Get  access to the window, in order to get its keys.
 	Window* theWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-	// Close the window (ESCAPE)
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -129,25 +118,19 @@ void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int m
 	{
 		if (action == GLFW_PRESS)
 		{
-			// Set the key to pressed
 			theWindow->keys[key] = true;
-			//printf("pressed: %d\n", key);
 		}
 		else if (action == GLFW_RELEASE)
 		{
-			// Set the key to released
 			theWindow->keys[key] = false;
-			//printf("released: %d\n", key);
 		}
 	}
 }
 
 void Window::handleMouse(GLFWwindow* window, double xPos, double yPos)
 {
-	// Get  access to the window, in order to get access to its mouse
 	Window* theWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-	// Get the first coordinates
 	if (theWindow->mouseFirstMoved)
 	{
 		theWindow->lastX = xPos;
@@ -155,23 +138,15 @@ void Window::handleMouse(GLFWwindow* window, double xPos, double yPos)
 		theWindow->mouseFirstMoved = false;
 	}
 
-	// Get the movement of the mouse
 	theWindow->xChange = xPos - theWindow->lastX;
 	theWindow->yChange = theWindow->lastY - yPos;
 
-	// Update the last coordinates
 	theWindow->lastX = xPos;
 	theWindow->lastY = yPos;
-
-	//printf("x: %.6f, y: %.6f\n", theWindow->xChange, theWindow->yChange);
 }
-
-
 
 Window::~Window()
 {
 	glfwDestroyWindow(mainWindow);
 	glfwTerminate();
 }
-
-
