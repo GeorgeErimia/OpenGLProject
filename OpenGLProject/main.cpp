@@ -64,8 +64,11 @@ GLfloat lastTime = 0.0f;
 GLfloat submarineHeight = 0.0f;
 glm::vec3 submarinePos = glm::vec3(-7.0f, -2.2f, 0.0f);
 GLfloat submarineAngle = 0.0f;
-GLfloat submarineDirectionZ = 0.0f;
-GLfloat submarineDirectionX = 0.0f;
+glm::vec3 submarineDirection(0.0f, 0.0f, 1.0f);
+
+GLfloat turnAngle = 0.0f;
+glm::vec3 waterPos = glm::vec3(0.0f, -2.0f, 0.0f);
+glm::vec3 mountainPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 // Vertex Shader
 static const char* vShader = "Shaders/shader.vert";
@@ -129,13 +132,49 @@ void CreateShaders()
 	directionalShadowShader.CreateFromFiles("Shaders/directional_shadow_map.vert", "Shaders/directional_shadow_map.frag");
 }
 
+void setSubmarineKeyControl(bool* keys)
+{
+	GLfloat velocity = 0.5f * deltaTime;
+
+	if (keys[GLFW_KEY_W])
+	{
+		// Move the submarine in the direction it is facing
+		submarinePos += velocity * submarineDirection;
+	}
+
+	if (keys[GLFW_KEY_S])
+	{
+		// Move the submarine in the opposite direction it is facing
+		submarinePos -= velocity * submarineDirection;
+	}
+
+	if (keys[GLFW_KEY_A])
+	{
+		turnAngle -= velocity;
+		// Update the submarine's direction based on the new turn angle
+		submarineDirection = glm::vec3(-sin(turnAngle), 0.0f, cos(turnAngle));
+	}
+
+	if (keys[GLFW_KEY_D])
+	{
+		turnAngle += velocity;
+		// Update the submarine's direction based on the new turn angle
+		submarineDirection = glm::vec3(-sin(turnAngle), 0.0f, cos(turnAngle));
+	}
+}
+
+// TODO : MAKE THE SKYBOX AND MAIN LIGHT MOVE ACCORDING TO THE MOVEMENT OF THE WORLD
+// THE SUBMARINE DOES NOT MOVE, THE WORLD MOVES AROUND IT
 void RenderScene()
 {
 	glm::mat4 model(1.0f);
 
 	// Render Water
-	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(10.0f, -2.0f, -5.0f));
+	model = glm::translate(model, waterPos);
+	model = glm::translate(model, submarinePos);
+	model = glm::rotate(model, turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::translate(model, -submarinePos);
+
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture.UseTexture();
 	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
@@ -143,8 +182,12 @@ void RenderScene()
 
 	// Render Mountains
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(12.0f, 0.0f, -5.0f));
+	model = glm::translate(model, submarinePos);
+	model = glm::rotate(model, turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::translate(model, -submarinePos);
+	model = glm::translate(model, mountainPos);
 	model = glm::scale(model, glm::vec3(0.2f / SCALE_FACTOR, 0.2f / SCALE_FACTOR, 0.2f / SCALE_FACTOR));
+
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	mountains.RenderModel();
@@ -159,8 +202,6 @@ void RenderScene()
 		submarineAngle = 0.1f;
 
 	model = glm::mat4(1.0f);
-
-	model = glm::rotate(model, submarineAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::translate(model, submarinePos);
 	model = glm::scale(model, glm::vec3(1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR));
 
@@ -169,11 +210,10 @@ void RenderScene()
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	submarine.RenderModel();
 
-	//camera.SetPosition(submarinePos + glm::vec3(0.0f, 1.0f, -3.0f));
-	//camera.setDirection(submarinePos);
 
-	// calculate view matrix again
-	//glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+	// Bind camera to object (Submarine)
+	camera.SetPosition(submarinePos + glm::vec3(0.0f, 1.5f, -3.0f));
+	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
 }
 
 void DirectionalShadowMapPass(DirectionalLight* light)
@@ -303,7 +343,8 @@ int main()
 		// Get + Handle User Input
 		glfwPollEvents();
 
-		camera.keyControl(mainWindow.getsKeys(), deltaTime);
+		//camera.keyControl(mainWindow.getsKeys(), deltaTime);
+		setSubmarineKeyControl(mainWindow.getsKeys());
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
 
 		DirectionalShadowMapPass(&mainLight);
