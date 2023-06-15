@@ -62,6 +62,7 @@ GLfloat lastTime = 0.0f;
 
 // submarine coordinates
 GLfloat submarineHeight = 0.0f;
+glm::vec3 lastSubmarinePos = glm::vec3(-7.0f, -2.2f, 0.0f);
 glm::vec3 submarinePos = glm::vec3(-7.0f, -2.2f, 0.0f);
 GLfloat submarineAngle = 0.0f;
 glm::vec3 submarineDirection(0.0f, 0.0f, 1.0f);
@@ -138,43 +139,55 @@ void setSubmarineKeyControl(bool* keys)
 
 	if (keys[GLFW_KEY_W])
 	{
-		// Move the submarine in the direction it is facing
+		lastSubmarinePos = submarinePos;
+		// Move the submarine forwards
 		submarinePos += velocity * submarineDirection;
 	}
 
 	if (keys[GLFW_KEY_S])
 	{
-		// Move the submarine in the opposite direction it is facing
+		lastSubmarinePos = submarinePos;
+		// Move the submarine backwards
 		submarinePos -= velocity * submarineDirection;
+	}
+
+	if (keys[GLFW_KEY_LEFT_SHIFT])
+	{
+		lastSubmarinePos = submarinePos;
+		// Lower the submarine into the water
+		if (!(submarinePos.y - velocity < -3.0f))
+			submarinePos.y -= velocity;
+	}
+
+	if (keys[GLFW_KEY_SPACE])
+	{
+		lastSubmarinePos = submarinePos;
+		// Lift the submarine up
+		if(!(submarinePos.y + velocity > -2.2f))
+			submarinePos.y += velocity;
 	}
 
 	if (keys[GLFW_KEY_A])
 	{
 		turnAngle -= velocity;
-		// Update the submarine's direction based on the new turn angle
+		// Turn the submarine to the left
 		submarineDirection = glm::vec3(-sin(turnAngle), 0.0f, cos(turnAngle));
 	}
 
 	if (keys[GLFW_KEY_D])
 	{
 		turnAngle += velocity;
-		// Update the submarine's direction based on the new turn angle
+		// Turn the submarine to the right
 		submarineDirection = glm::vec3(-sin(turnAngle), 0.0f, cos(turnAngle));
 	}
 }
 
-// TODO : MAKE THE SKYBOX AND MAIN LIGHT MOVE ACCORDING TO THE MOVEMENT OF THE WORLD
-// THE SUBMARINE DOES NOT MOVE, THE WORLD MOVES AROUND IT
 void RenderScene()
 {
 	glm::mat4 model(1.0f);
 
 	// Render Water
 	model = glm::translate(model, waterPos);
-	model = glm::translate(model, submarinePos);
-	model = glm::rotate(model, turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::translate(model, -submarinePos);
-
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture.UseTexture();
 	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
@@ -182,9 +195,6 @@ void RenderScene()
 
 	// Render Mountains
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, submarinePos);
-	model = glm::rotate(model, turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::translate(model, -submarinePos);
 	model = glm::translate(model, mountainPos);
 	model = glm::scale(model, glm::vec3(0.2f / SCALE_FACTOR, 0.2f / SCALE_FACTOR, 0.2f / SCALE_FACTOR));
 
@@ -193,16 +203,10 @@ void RenderScene()
 	mountains.RenderModel();
 
 	// Render Submarine Animation
-	submarineHeight += 0.9f * deltaTime;
-	if (submarineHeight > 360.0f)
-		submarineHeight = 0.1f;
-
-	submarineAngle += 2.0f * deltaTime;
-	if (submarineAngle > 360.0f)
-		submarineAngle = 0.1f;
 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, submarinePos);
+	model = glm::rotate(model, -turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR));
 
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -210,10 +214,7 @@ void RenderScene()
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	submarine.RenderModel();
 
-
-	// Bind camera to object (Submarine)
-	camera.SetPosition(submarinePos + glm::vec3(0.0f, 1.5f, -3.0f));
-	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+	GLfloat velocity = 0.5f * deltaTime;
 }
 
 void DirectionalShadowMapPass(DirectionalLight* light)
@@ -283,7 +284,7 @@ int main()
 	CreateObjects();
 	CreateShaders();
 
-	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 170.0f, 0.0f, 5.0f, 0.5f);
+	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 170.0f, 0.0f, 5.0f, 0.1f);
 
 	// Load Textures for in-house built objects
 	plainTexture = Texture("Textures/plain.png");
@@ -327,9 +328,9 @@ int main()
 	skybox = Skybox(skyboxFaces);
 
 
-	// Ids
-	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
-		uniformSpecularIntensity = 0, uniformShininess = 0;
+	//// Ids
+	//GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
+	//	uniformSpecularIntensity = 0, uniformShininess = 0;
 	glm::mat4 projection = glm::perspective(glm::radians(60.0f), (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f);
 
 	// Loop until window closed
@@ -343,9 +344,17 @@ int main()
 		// Get + Handle User Input
 		glfwPollEvents();
 
+		// // Use key control when using old mouse control
 		//camera.keyControl(mainWindow.getsKeys(), deltaTime);
+
 		setSubmarineKeyControl(mainWindow.getsKeys());
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange(), submarinePos, lastSubmarinePos);
+
+		// // Old movement (not focused on object)
+		//camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
+
+
+		printf("%f %f %f\n", camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
 
 		DirectionalShadowMapPass(&mainLight);
 		RenderPass(camera.calculateViewMatrix(), projection);
