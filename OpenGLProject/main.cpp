@@ -147,7 +147,7 @@ void CreateShaders()
 	directionalShadowShader.CreateFromFiles("Shaders/directional_shadow_map.vert", "Shaders/directional_shadow_map.frag");
 }
 
-void setSubmarineKeyControl(bool* keys)
+void setSubmarineKeyControl(bool* keys, bool experimental)
 {
 	GLfloat velocity = 0.5f * deltaTime;
 
@@ -156,6 +156,9 @@ void setSubmarineKeyControl(bool* keys)
 		lastSubmarinePos = submarinePos;
 		// Move the submarine forwards
 		submarinePos += velocity * submarineDirection;
+		if (!experimental);
+		camera.SetPosition(camera.getCameraPosition() + submarinePos - lastSubmarinePos);
+
 	}
 
 	if (keys[GLFW_KEY_S])
@@ -163,6 +166,8 @@ void setSubmarineKeyControl(bool* keys)
 		lastSubmarinePos = submarinePos;
 		// Move the submarine backwards
 		submarinePos -= velocity * submarineDirection;
+		if (!experimental);
+		camera.SetPosition(camera.getCameraPosition() + submarinePos - lastSubmarinePos);
 	}
 
 	if (keys[GLFW_KEY_LEFT_SHIFT])
@@ -367,6 +372,8 @@ void RenderScene()
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	submarine.RenderModel();
 
+	
+
 	RenderFishes();
 
 	// Render fish
@@ -509,13 +516,13 @@ int main()
 		glfwPollEvents();
 
 		 // Use key control when not focusing on object
-		camera.keyControl(mainWindow.getsKeys(), deltaTime);
+		camera.keyControl(mainWindow.getsKeys(), deltaTime, false);
 
-		//setSubmarineKeyControl(mainWindow.getsKeys());
-		//camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange(), submarinePos, lastSubmarinePos);
+		setSubmarineKeyControl(mainWindow.getsKeys(), false);
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange(), submarinePos, lastSubmarinePos);
 
-		 // Old movement (not focused on object)
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
+		// // Old movement (not focused on object)
+		//camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
 
 		DirectionalShadowMapPass(&mainLight);
 		RenderPass(camera.calculateViewMatrix(), projection);

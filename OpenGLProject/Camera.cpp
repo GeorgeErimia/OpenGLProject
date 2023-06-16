@@ -5,11 +5,13 @@ Camera::Camera() {}
 Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLfloat startPitch, GLfloat startMoveSpeed, GLfloat startTurnSpeed)
 {
     position = startPosition;
+    originalPosition = startPosition;
     worldUp = startUp;
     yaw = startYaw;
     pitch = startPitch;
     front = glm::vec3(0.0f, 0.0f, -1.0f);
     right = glm::normalize(glm::cross(front, worldUp));
+    zoom = 1.0f;
 
     moveSpeed = startMoveSpeed;
     turnSpeed = startTurnSpeed;
@@ -17,28 +19,41 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLf
     update();
 }
 
-void Camera::keyControl(bool* keys, GLfloat deltaTime)
+void Camera::keyControl(bool* keys, GLfloat deltaTime, bool experimental)
 {
     GLfloat velocity = moveSpeed * deltaTime;
 
-    if (keys[GLFW_KEY_UP])
+    if (experimental)
     {
-        position += front * velocity;
+        if (keys[GLFW_KEY_UP])
+        {
+            position += front * velocity;
+        }
+
+        if (keys[GLFW_KEY_DOWN])
+        {
+            position -= front * velocity;
+        }
+
+        if (keys[GLFW_KEY_LEFT])
+        {
+            position -= right * velocity;
+        }
+
+        if (keys[GLFW_KEY_RIGHT])
+        {
+            position += right * velocity;
+        }
+    }
+   
+    if (keys[GLFW_KEY_Q])
+    {
+        zoom += 0.03f * velocity;
     }
 
-    if (keys[GLFW_KEY_DOWN])
+    if (keys[GLFW_KEY_E])
     {
-        position -= front * velocity;
-    }
-
-    if (keys[GLFW_KEY_LEFT])
-    {
-        position -= right * velocity;
-    }
-
-    if (keys[GLFW_KEY_RIGHT])
-    {
-        position += right * velocity;
+        zoom -= 0.03f * velocity;
     }
 }
 
@@ -68,19 +83,14 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange, const glm::vec3& obj
     xChange *= turnSpeed;
     yChange *= turnSpeed;
 
-    // Calculate the vector from the object position to the camera position
     glm::vec3 objectToCamera = position - objectPosition;
 
-    // Rotate the objectToCamera vector based on the mouse movement
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-xChange), up);
     rotationMatrix = glm::rotate(rotationMatrix, glm::radians(yChange), right);
     objectToCamera = glm::vec3(rotationMatrix * glm::vec4(objectToCamera, 1.0f));
-
-    // Calculate the object's movement vector
-    glm::vec3 objectMovement = objectPosition - previousObjectPosition;
-
-    // Update the camera's position based on the new objectToCamera vector and object's movement
-    position = objectPosition + objectToCamera + objectMovement;
+    
+    position = objectPosition + objectToCamera * zoom;
+    zoom = 1.0f;
 
     FocusOnObject(objectPosition);
 
