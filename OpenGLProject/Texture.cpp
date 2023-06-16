@@ -74,10 +74,44 @@ bool Texture::LoadTextureA()
 	return true;
 }
 
+bool Texture::LoadColorTexture(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
+{
+	width = 1;
+	height = 1;
+	bitDepth = 4;
+
+	unsigned char texData[4] = { red, green, blue, alpha };
+
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return true;
+}
+
 void Texture::UseTexture()
 {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, textureID);
+	glDisable(GL_BLEND);
+}
+
+void Texture::UseTextureBlending()
+{
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Texture::ClearTexture()

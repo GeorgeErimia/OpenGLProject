@@ -130,6 +130,7 @@ void Shader::CompileProgram() {
 	uniformSpecularIntensity = glGetUniformLocation(shaderID, "material.specularIntensity");
 	uniformShininess = glGetUniformLocation(shaderID, "material.shininess");
 	uniformEyePosition = glGetUniformLocation(shaderID, "eyePosition");
+	uniformCastShadows = glGetUniformLocation(shaderID, "castShadows");
 
 	uniformPointLightCount = glGetUniformLocation(shaderID, "pointLightCount");
 
@@ -267,6 +268,11 @@ GLuint Shader::GetOmniLightPosLocation()
 GLuint Shader::GetFarPlaneLocation()
 {
 	return uniformFarPlane;
+}
+
+GLuint Shader::GetCastShadowLocation()
+{
+	return uniformCastShadows;
 }
 
 void Shader::SetDirectionalLight(DirectionalLight* dLight)

@@ -26,11 +26,13 @@
 
 #include "Skybox.h"
 
+// Texture
+
 const float toRadians = 3.14159265f / 180.0f;
 
 GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
 uniformSpecularIntensity = 0, uniformShininess = 0,
-uniformDirectionalLightTransform = 0, uniformOmniLightPos = 0, uniformFarPlane = 0;
+uniformDirectionalLightTransform = 0, uniformOmniLightPos = 0, uniformFarPlane = 0, uniformCastShadows = 0;
 
 Window mainWindow;
 std::vector<Mesh*> meshList;
@@ -43,6 +45,7 @@ Camera camera;
 
 Texture plainTexture;
 Texture waterTexture;
+Texture waterTexture2;
 
 Material shinyMaterial;
 Material dullMaterial;
@@ -344,12 +347,9 @@ void RenderScene()
 {
 	glm::mat4 model(1.0f);
 
-	// Render Water
-	model = glm::translate(model, waterPos);
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture.UseTexture();
-	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	glEnable(GL_DEPTH_TEST);
+
+	RenderFishes();
 
 	// Render Mountains
 	model = glm::mat4(1.0f);
@@ -361,28 +361,22 @@ void RenderScene()
 	mountains.RenderModel();
 
 	// Render Submarine Animation
-
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, submarinePos);
 	model = glm::rotate(model, -turnAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR, 1.0f / SCALE_FACTOR));
 
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture.UseTexture();
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	submarine.RenderModel();
 
-	
-
-	RenderFishes();
-
-	// Render fish
-	//model = glm::mat4(1.0f);
-	//model = glm::translate(model, submarinePos - glm::vec3(0.0f, 0.0f, -5.0f));
-	//model = glm::rotate(model, -90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
-	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	//fish.RenderModel();
+	// Render Water
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, waterPos);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture2.UseTextureBlending();
+	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
 
 	GLfloat velocity = 0.5f * deltaTime;
 }
@@ -425,6 +419,7 @@ void RenderPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix)
 	uniformEyePosition = shaderList[0].GetEyePositionLocation();
 	uniformSpecularIntensity = shaderList[0].GetSpecularIntensityLocation();
 	uniformShininess = shaderList[0].GetShininessLocation();
+	uniformCastShadows = shaderList[0].GetCastShadowLocation();
 
 	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
@@ -459,8 +454,8 @@ int main()
 	// Load Textures for in-house built objects
 	plainTexture = Texture("Textures/plain.png");
 	plainTexture.LoadTextureA();
-	waterTexture = Texture("Textures/ocean.png");
-	waterTexture.LoadTexture();
+	waterTexture2 = Texture();
+	waterTexture2.LoadColorTexture(0, 100, 200, 50);
 
 	// Two materials (different shininess)
 	shinyMaterial = Material(4.0f, 256);
@@ -532,3 +527,4 @@ int main()
 
 	return 0;
 }
+
